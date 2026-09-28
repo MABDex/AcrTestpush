@@ -1,4 +1,4 @@
-name: Build and Push to Azure Container Registry
+name: Build and Push with ACR Build
 
 on:
   push:
@@ -16,18 +16,16 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          creds: '{"clientId":"${{ secrets.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","tenantId":"${{ secrets.AZURE_TENANT_ID }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}"}'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: ACR Login via Azure CLI
-        run: |
-          az acr login --name ${{ secrets.ACR_NAME }}
-
-      - name: Docker Image bauen und pushen
-        run: |
-          IMAGE_TAG=${{ secrets.ACR_NAME }}.azurecr.io/testacr:${{ github.sha }}
-          IMAGE_LATEST=${{ secrets.ACR_NAME }}.azurecr.io/testacr:latest
-
-          docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
-
-          docker push $IMAGE_TAG
-          docker push $IMAGE_LATEST
+      - name: Build und Push direkt in ACR
+        uses: azure/acr-build@v1
+        with:
+          service_principal: ${{ secrets.AZURE_CLIENT_ID }}
+          service_principal_password: ${{ secrets.AZURE_CLIENT_SECRET }}
+          tenant: ${{ secrets.AZURE_TENANT_ID }}
+          registry: nkacr
+          repository: testacr
+          image: testacr
+          tag: ${{ github.sha }}
+          folder: .
