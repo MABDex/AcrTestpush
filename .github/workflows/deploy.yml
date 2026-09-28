@@ -1,4 +1,4 @@
-name: Build and Push with Azure CLI
+name: Build and Push Docker to ACR
 
 on:
   push:
@@ -10,19 +10,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Code auschecken
+      - name: 1. Quellcode auschecken
         uses: actions/checkout@v4
 
-      - name: Azure Login
+      - name: 2. Docker Image lokal auf Runner bauen
+        run: |
+          docker build \
+            -t nkacr.azurecr.io/testacr:${{ github.sha }} \
+            -t nkacr.azurecr.io/testacr:latest \
+            .
+
+      - name: 3. Bei Azure anmelden (Authentifizierung via Service Principal)
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build und Push in ACR ausführen
+      - name: 4. ACR-Zugriffstoken abrufen und Docker autorisieren (RBAC Check)
         run: |
-          az acr build \
-            --registry nkacr \
-            --resource-group Nanako \
-            --image testacr:${{ github.sha }} \
-            --image testacr:latest \
-            .
+          # Fordert ein zeitlich befristetes ACR-Zugriffstoken für den Service Principal an
+          TOKEN=$(az acr login --name nkacr --expose-token --output tsv --query accessToken)
+          
+          # Docker meldet sich mit der Standard-Service-Principal-GUID an
+          echo "$TOKEN" | docker login nkacr.azurecr.io -u 00000000-0000-0000-0000-000000000000 --password-stdin
+
+      - name: 5. Image in Azure Container Registry hochladen
+        run: |
+          docker push nkacr.azurecr.io/testacr:${{ github.sha }}
+          docker push nkacr.azurecr.io/testacr:latest
