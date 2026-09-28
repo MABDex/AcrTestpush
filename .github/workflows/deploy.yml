@@ -1,6 +1,5 @@
 name: Build and Push with Azure CLI
 
-
 on:
   push:
     branches: [ "main", "master" ]
