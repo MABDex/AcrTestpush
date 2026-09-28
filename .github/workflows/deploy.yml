@@ -1,0 +1,33 @@
+name: Build and Push to Azure Container Registry
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Ermöglicht auch manuelles Starten über GitHub
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: An Azure Container Registry anmelden
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ secrets.ACR_NAME }}.azurecr.io
+          username: ${{ secrets.AZURE_CLIENT_ID }}
+          password: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Docker Image bauen und pushen
+        run: |
+          IMAGE_TAG=${{ secrets.ACR_NAME }}.azurecr.io/testacr:${{ github.sha }}
+          IMAGE_LATEST=${{ secrets.ACR_NAME }}.azurecr.io/testacr:latest
+          
+          # Image bauen
+          docker build -t $IMAGE_TAG -t $IMAGE_LATEST .
+          
+          # Image zur ACR pushen
+          docker push $IMAGE_TAG
+          docker push $IMAGE_LATEST
