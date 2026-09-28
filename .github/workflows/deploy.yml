@@ -1,4 +1,4 @@
-name: Build and Push with ACR Build
+name: Build and Push with Azure CLI
 
 on:
   push:
@@ -18,14 +18,11 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build und Push direkt in ACR
-        uses: azure/acr-build@v1
-        with:
-          service_principal: ${{ secrets.AZURE_CLIENT_ID }}
-          service_principal_password: ${{ secrets.AZURE_CLIENT_SECRET }}
-          tenant: ${{ secrets.AZURE_TENANT_ID }}
-          registry: nkacr
-          repository: testacr
-          image: testacr
-          tag: ${{ github.sha }}
-          folder: .
+      - name: Build und Push in ACR ausführen
+        run: |
+          az acr build \
+            --registry nkacr \
+            --resource-group Nanako \
+            --image testacr:${{ github.sha }} \
+            --image testacr:latest \
+            .
