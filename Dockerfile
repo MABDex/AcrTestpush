@@ -6,6 +6,10 @@ WORKDIR /app
 COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw .
+
+# Ausführungsrechte für mvnw vergeben:
+RUN chmod +x mvnw
+
 RUN ./mvnw dependency:go-offline -B || true
 
 # Quellcode kopieren und Paket bauen (Tests im Build überspringen)
